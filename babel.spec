@@ -6,6 +6,7 @@
 # before the release)
 %if 0%{?fedora} >= 24
 %global default_python 3
+%global with_python3 1
 %else
 %global default_python 2
 %endif
@@ -22,28 +23,6 @@ Patch0:         babel-2.3.4-remove-pytz-version.patch
 
 BuildArch:      noarch
 
-BuildRequires:  python2-devel
-BuildRequires:  python2-setuptools
-BuildRequires:  python2-pytz
-BuildRequires:  python2-pytest
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
-BuildRequires:  python3-pytz
-BuildRequires:  python3-pytest
-
-# build the documentation
-BuildRequires:  make
-
-%if %{default_python} >= 3
-BuildRequires:  python3-sphinx
-Requires:       python3-babel
-Requires:       python3-setuptools
-%else
-BuildRequires:  python-sphinx
-Requires:       python2-babel
-Requires:       python2-setuptools
-%endif
-
 
 %description
 Babel is composed of two major parts:
@@ -56,6 +35,14 @@ Babel is composed of two major parts:
 
 %package -n python2-babel
 Summary:        %sum
+
+BuildRequires:  python2-devel
+BuildRequires:  python-setuptools
+BuildRequires:  pytz
+BuildRequires:  python-pytest
+
+# build the documentation
+BuildRequires:  make
 
 Requires:       python-setuptools
 Requires:       pytz
@@ -71,8 +58,14 @@ Babel is composed of two major parts:
   providing access to various locale display names, localized number
   and date formatting, etc.
 
+%if 0%{?with_python3}
 %package -n python3-babel
 Summary:        %sum
+
+BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
+BuildRequires:  python3-pytz
+BuildRequires:  python3-pytest
 
 Requires:       python3-setuptools
 Requires:       python3-pytz
@@ -87,9 +80,21 @@ Babel is composed of two major parts:
 * a Python interface to the CLDR (Common Locale Data Repository),
   providing access to various locale display names, localized number
   and date formatting, etc.
+%endif
 
 %package doc
 Summary:        Documentation for Babel
+
+%if %{default_python} >= 3
+BuildRequires:  python3-sphinx
+Requires:       python3-babel
+Requires:       python3-setuptools
+%else
+BuildRequires:  python-sphinx
+Requires:       python-babel
+Requires:       python-setuptools
+%endif
+
 Provides:       python-babel-doc = %{version}-%{release}
 Provides:       python2-babel-doc = %{version}-%{release}
 Provides:       python3-babel-doc = %{version}-%{release}
@@ -102,7 +107,9 @@ Documentation for Babel
 
 %build
 %py2_build
+%if 0%{?with_python3}
 %py3_build
+%endif
 
 BUILDDIR="$PWD/built-docs"
 rm -rf "$BUILDDIR"
@@ -119,18 +126,18 @@ popd
 rm -f "$BUILDDIR/html/.buildinfo"
 
 %install
-%if %{default_python} >= 3
-%py2_install
+%if 0%{?with_python3}
 %py3_install
-%else
-%py3_install
-%py2_install
 %endif
+%py2_install
+
 
 %check
 export TZ=America/New_York
 %{__python2} setup.py test
+%if 0%{?with_python3}
 %{__python3} setup.py test
+%endif
 
 %files
 %doc CHANGES AUTHORS
@@ -141,9 +148,11 @@ export TZ=America/New_York
 %{python2_sitelib}/Babel-%{version}-py*.egg-info
 %{python2_sitelib}/babel
 
+%if 0%{?with_python3}
 %files -n python3-babel
 %{python3_sitelib}/Babel-%{version}-py*.egg-info
 %{python3_sitelib}/babel
+%endif
 
 %files doc
 %doc built-docs/html/*
